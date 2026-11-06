@@ -13,20 +13,27 @@ pool:
 stages:
 
   # ==========================================
-  # STAGE 1: INTEGRACIÓN CONTINUA (CI)
+  # STAGE 1: PREVALIDACIÓN
   # ==========================================
-  - stage: CI
-    displayName: 'CI'
+  - stage: PreValidation
+    displayName: 'Prevalidar'
     jobs:
       - job: prevalidation
-        displayName: 'Prevalidar'
+      displayName: 'Validación Inicial'
         steps:
           - script: echo "Simulación de verificación de la estructura del repositorio realizada correctamente."
             displayName: 'Validación inicial'
 
+  # ==========================================
+  # STAGE 2: BUILD
+  # ==========================================
+  - stage: Build
+    displayName: 'Build'
+    dependsOn: PreValidation
+    condition: succeeded()
+    jobs:
       - job: build
         displayName: 'Compilar'
-        dependsOn: prevalidation
         steps:
           # 1. Descargar el JDK 25 usando la API de Adoptium
           - script: |
@@ -51,9 +58,16 @@ stages:
               ./gradlew compileJava -x test
             displayName: 'Compilar con Gradle'
 
+  # ==========================================
+  # STAGE 3: TEST (CI)
+  # ==========================================
+  - stage: Test
+    displayName: 'Test'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
       - job: test
         displayName: 'Pruebas y Cobertura'
-        dependsOn: build
         steps:
           # 1. Descargar el JDK 25 usando la API de Adoptium
           - script: |
@@ -86,11 +100,11 @@ stages:
             displayName: 'Publicar Cobertura en Azure DevOps'
 
   # ==========================================
-  # STAGE 2: APROBACIÓN MANUAL (APPROVAL)
+  # STAGE 4: APROBACIÓN MANUAL (APPROVAL)
   # ==========================================
   - stage: Approval
     displayName: 'Aprobar'
-    dependsOn: CI
+    dependsOn: Test
     condition: succeeded()
     jobs:
       - job: manual_gate
@@ -104,7 +118,7 @@ stages:
               onTimeout: 'reject'
 
   # ==========================================
-  # STAGE 3: DESPLIEGUE CONTINUO (CD)
+  # STAGE 5: DESPLIEGUE CONTINUO (CD)
   # ==========================================
   - stage: CD
     displayName: 'CD'
@@ -146,11 +160,16 @@ stages:
             displayName: 'Descarga CLI, Login y Despliegue Docker'
 
   # ==========================================
-  # STAGE 4: NOTIFICACIONES (NOTIFICATIONS)
+  # STAGE 6: NOTIFICACIONES (NOTIFICATIONS)
   # ==========================================
   - stage: Notifications
     displayName: 'Notificar'
-    dependsOn: [CI, Approval, CD]
+    dependsOn:
+      - PreValidation
+      - Build
+      - Test
+      - Approval
+      - CD
     condition: always()
     jobs:
       - job: send_status_email
