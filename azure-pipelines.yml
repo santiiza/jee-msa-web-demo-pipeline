@@ -19,7 +19,7 @@ stages:
     displayName: 'Prevalidar'
     jobs:
       - job: prevalidation
-      displayName: 'Validación Inicial'
+        displayName: 'Validación Inicial'
         steps:
           - script: echo "Simulación de verificación de la estructura del repositorio realizada correctamente."
             displayName: 'Validación inicial'
@@ -29,11 +29,10 @@ stages:
   # ==========================================
   - stage: Build
     displayName: 'Build'
-    dependsOn: PreValidation
-    condition: succeeded()
     jobs:
       - job: build
         displayName: 'Compilar'
+        dependsOn: PreValidation
         steps:
           # 1. Descargar el JDK 25 usando la API de Adoptium
           - script: |
@@ -63,11 +62,10 @@ stages:
   # ==========================================
   - stage: Test
     displayName: 'Test'
-    dependsOn: Build
-    condition: succeeded()
     jobs:
       - job: test
         displayName: 'Pruebas y Cobertura'
+        dependsOn: Build
         steps:
           # 1. Descargar el JDK 25 usando la API de Adoptium
           - script: |
@@ -164,12 +162,7 @@ stages:
   # ==========================================
   - stage: Notifications
     displayName: 'Notificar'
-    dependsOn:
-      - PreValidation
-      - Build
-      - Test
-      - Approval
-      - CD
+    dependsOn: [PreValidation, Build, Test, Approval, CD]
     condition: always()
     jobs:
       - job: send_status_email
