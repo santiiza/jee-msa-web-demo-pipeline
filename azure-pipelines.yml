@@ -99,7 +99,7 @@ stages:
         steps:
           - task: ManualValidation@0
             inputs:
-              notifyUsers: 'jefersonvillacis@hotmail.com'
+              notifyUsers: 'santiiza@gmail.com'
               instructions: 'Aprobación requerida para ejecutar la fase de despliegue continuo en OpenShift Sandbox.'
               onTimeout: 'reject'
 
