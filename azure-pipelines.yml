@@ -16,7 +16,7 @@ stages:
   # STAGE 1: PREVALIDACIÓN
   # ==========================================
   - stage: PreValidation
-    displayName: 'Prevalidar'
+    displayName: 'PreValidation'
     jobs:
       - job: prevalidation
         displayName: 'Validación Inicial'
@@ -29,10 +29,11 @@ stages:
   # ==========================================
   - stage: Build
     displayName: 'Build'
+    dependsOn: PreValidation
+    condition: succeeded()
     jobs:
       - job: build
         displayName: 'Compilar'
-        dependsOn: PreValidation
         steps:
           # 1. Descargar el JDK 25 usando la API de Adoptium
           - script: |
@@ -58,14 +59,15 @@ stages:
             displayName: 'Compilar con Gradle'
 
   # ==========================================
-  # STAGE 3: TEST (CI)
+  # STAGE 3: TEST
   # ==========================================
   - stage: Test
     displayName: 'Test'
+    dependsOn: Build
+    condition: succeeded()
     jobs:
       - job: test
         displayName: 'Pruebas y Cobertura'
-        dependsOn: Build
         steps:
           # 1. Descargar el JDK 25 usando la API de Adoptium
           - script: |
@@ -162,7 +164,7 @@ stages:
   # ==========================================
   - stage: Notifications
     displayName: 'Notificar'
-    dependsOn: [PreValidation, Build, Test, Approval, CD]
+    dependsOn: [CI, Approval, CD]
     condition: always()
     jobs:
       - job: send_status_email
